@@ -2,6 +2,9 @@ from crawler import Crawler
 from articledb import ArticleDb
 from docproc import DocProc
 from bs4 import BeautifulSoup
+from textcloud import TextCloud
+import pandas as pd
+import matplotlib.pyplot as plt
 import re
 
 class MainEngine:
@@ -23,7 +26,8 @@ class MainEngine:
         crwl=Crawler()
         for page in self.pagelist:
             if page != '#' and page != 'mailto:web.thehindu@thehindu.co.in' and page !=None:
-                crwl.get_page(page)
+                if(crwl.get_page(page)!=True):
+                    continue
                 soup=crwl.return_soup()
                 content=soup.find("div",{"class":"article-text"})
                 if content != None:
@@ -57,6 +61,29 @@ class MainEngine:
     def save_docs(self):
         self.articledb.insert_doc(self.final_docs)
 
+# Run textcloud on today's news
+    def make_cloud(self):
+        docs=self.articledb.return_doc()
+        proc_obj=DocProc()
+        doc_string=" ".join(docs)
+        doc_vector=[doc_string]
+        tokenized_doc_vector=proc_obj.tokenize(doc_vector)
+        final_doc_vector=proc_obj.remove_stopwords(tokenized_doc_vector)
+        final_text=" ".join(final_doc_vector[0])
+        txt_cl=TextCloud(final_text)
+        txt_cl.make_cloud()
+
+# Pandas analytics #1. show the bar chart of each article by count of certain
+# string.
+    def pd_analytics(self,word):
+        docs=self.articledb.return_doc()
+        # proc_obj=DocProc()
+        # tokenized_doc_vector=proc_obj.tokenize(docs)
+        # final_doc_vector=proc_obj.remove_stopwords(tokenized_doc_vector)
+        # doc_df=pd.Series(final_doc_vector)
+        doc_df=pd.Series(docs)
+        return doc_df
+
 # Executes the MainEngine.
 def main():
     x=MainEngine()
@@ -64,5 +91,5 @@ def main():
     x.save_docs()
 
 
-if __name=="__main__":
+if __name__=="__main__":
     main()
